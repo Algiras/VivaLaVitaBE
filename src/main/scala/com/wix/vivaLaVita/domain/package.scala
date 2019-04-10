@@ -2,7 +2,6 @@ package com.wix.vivaLaVita
 
 import shapeless.tag
 import java.util.UUID
-import com.wix.vivaLaVita.database.dao.Identifiable
 import org.joda.time.DateTime
 import shapeless.tag.@@
 
@@ -29,17 +28,13 @@ package object domain {
                   password: String,
                   createdAt: DateTime,
                   updatedAt: Option[DateTime],
-                  isActive: Boolean) extends Identifiable[UserId, User] {
-    override def getId(value: User): UserId = id
-  }
+                  isActive: Boolean)
 
   case class Position(id: PositionId,
                       name: String,
                       createdAt: DateTime,
                       updatedAt: Option[DateTime],
-                      isActive: Boolean) extends Identifiable[PositionId, Position] {
-    override def getId(value: Position): PositionId = id
-  }
+                      isActive: Boolean)
 
   case class Message(id: MessageId,
                      positionId: Option[PositionId],
@@ -47,7 +42,17 @@ package object domain {
                      message: String,
                      createdAt: DateTime,
                      updatedAt: Option[DateTime],
-                     isActive: Boolean) extends Identifiable[MessageId, Message] {
-    override def getId(value: Message): MessageId = id
-  }
+                     isActive: Boolean)
+
+  case class Link(candidateId: CandidateId, linkType: LinkType, url: String)
+  case class RequestLink(linkType: LinkType, url: String)
+
+  case class Candidate(id: CandidateId,
+                       `type`: CandidateType,
+                       fullName: String,
+                       links: Seq[Link],
+                       realUrl: Option[String],
+                       createdAt: DateTime,
+                       updatedAt: Option[DateTime],
+                       isActive: Boolean)
 }
