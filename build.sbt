@@ -9,6 +9,7 @@ val tsecVersion = "0.1.0-M3"
 val shapelessVersion = "2.3.3"
 val tsecV = "0.1.0-M3"
 val pureConfigVersion = "0.10.2"
+val enumeratumCirceVersion = "1.5.21"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
@@ -51,7 +52,9 @@ lazy val root = (project in file("."))
 
       "com.github.pureconfig" %% "pureconfig-cats-effect" % pureConfigVersion,
       "com.github.pureconfig" %% "pureconfig-enumeratum"  % pureConfigVersion,
-      "com.github.pureconfig" %% "pureconfig-generic"     % pureConfigVersion
+      "com.github.pureconfig" %% "pureconfig-generic"     % pureConfigVersion,
+
+      "com.beachape" %% "enumeratum-circe" % enumeratumCirceVersion
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")

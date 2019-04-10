@@ -14,11 +14,15 @@ class ServiceDSL[F[_]: Monad] {
   val dsl: Http4sDsl[F] = Http4sDsl[F]
   import dsl._
 
+  object PageQueryParamMatcher extends QueryParamDecoderMatcher[Int]("page")
+  object PageSizeQueryParamMatcher extends QueryParamDecoderMatcher[Int]("pageSize")
+
   private def buildMessage(message: String) = Json.obj(("message", Json.fromString(message)))
 
   val notFound: F[Response[F]] = NotFound(buildMessage("Not Found"))
   val forbidden: F[Response[F]] = Forbidden(buildMessage("Forbidden"))
   val success: F[Response[F]] = Ok(buildMessage("Success"))
+  val badRequest: F[Response[F]] = BadRequest(buildMessage("Bad Request"))
 }
 
 object ServiceDSL {

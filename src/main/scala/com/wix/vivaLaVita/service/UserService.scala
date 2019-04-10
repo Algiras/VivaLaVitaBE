@@ -2,9 +2,7 @@ package com.wix.vivaLaVita.service
 
 import java.util.UUID
 
-import cats.Monad
-import cats.data.OptionT
-import cats.effect.{Effect, Sync}
+import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monoid._
@@ -14,16 +12,16 @@ import com.wix.vivaLaVita.database.Queries
 import com.wix.vivaLaVita.domain._
 import com.wix.vivaLaVita.dto.UserDTO._
 import io.circe.syntax._
-import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import shapeless.tag
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
+import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.Try
 
-class UserService[F[_] : Sync](Auth: SecuredRequestHandler[F, UserId, User, AugmentedJWT[HMACSHA256, UserId]], queries: Queries[F]) {
+class UserService[F[_] : Sync](queries: Queries[F]) {
   val dsl: Http4sDsl[F] = Http4sDsl[F]
   val serviceDsl: ServiceDSL[F] = ServiceDSL[F]
 
@@ -37,31 +35,38 @@ class UserService[F[_] : Sync](Auth: SecuredRequestHandler[F, UserId, User, Augm
   private def responseUser(user: User) = Ok(buildResponse(user).asJson)
 
   object PageQueryParamMatcher extends QueryParamDecoderMatcher[Int]("page")
-  object PageSizeQueryParamMatcher extends QueryParamDecoderMatcher[Int]("page")
+  object PageSizeQueryParamMatcher extends QueryParamDecoderMatcher[Int]("pageSize")
 
-  val service: HttpRoutes[F] = Auth.liftService(TSecAuthService {
+  val service: TSecAuthService[User, AugmentedJWT[HMACSHA256, UserId], F] = TSecAuthService {
     case GET -> Root / "me" asAuthed user => responseUser(user)
 
-    case GET -> Root / "users" :? PageQueryParamMatcher(page) +& PageSizeQueryParamMatcher(pageSize)  asAuthed _ =>
+    case GET -> Root / "user" :? PageQueryParamMatcher(page) +& PageSizeQueryParamMatcher(pageSize)  asAuthed _ => {
       queries.userDao.paged(page, pageSize).flatMap(res => Ok(res.map(buildResponse).asJson))
+    }
 
-    case GET -> Root / "users" / UserIdVal(id)  asAuthed _ =>
+    case GET -> Root / "user" / UserIdVal(id)  asAuthed _ =>
       queries.userDao.read(id).flatMap(res => res.map(responseUser).getOrElse(notFound))
 
-    case DELETE -> Root / "users" / UserIdVal(id)  asAuthed _ =>
+    case DELETE -> Root / "user" / UserIdVal(id)  asAuthed _ =>
       queries.userDao.read(id).flatMap(res => {
         res.map(_ => queries.userDao.delete(id)).map(_ => success).getOrElse(notFound)
       })
 
-    case req@POST -> Root / "users" asAuthed _ =>
-      req.request.as[UserRequest] flatMap (userReq => queries.userDao.create(buildUser(userReq)).map(responseUser).flatten)
+    case req@POST -> Root / "user" asAuthed _ => for {
+      userReq <- req.request.as[UserRequest]
+      hashedPsw <-BCrypt.hashpw[F](userReq.password)
+      res <- queries.userDao.create(buildUser(userReq.copy(hashedPsw))).map(responseUser).flatten
+    } yield res
 
-    case req@PUT -> Root / "users" / UserIdVal(id)  asAuthed _ =>
-      req.request.as[UserRequest] flatMap (user => queries.userDao.read(id).flatMap(userUpdate => {
+    case req@PUT -> Root / "user" / UserIdVal(id)  asAuthed _ => for {
+      userReq <- req.request.as[UserRequest]
+      hashedPsw <-BCrypt.hashpw[F](userReq.password)
+      res <- queries.userDao.read(id).flatMap(userUpdate => {
         userUpdate
-          .map(buildUpdatedUser(_, user))
+          .map(buildUpdatedUser(_, userReq.copy(password = hashedPsw)))
           .map(u => queries.userDao.update(id, u).flatMap(_ => responseUser(u)))
           .getOrElse(notFound)
-      }))
-  })
+      })
+    } yield res
+  }
 }

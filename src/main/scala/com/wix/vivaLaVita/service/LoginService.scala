@@ -34,7 +34,7 @@ class LoginService[F[_] : Sync](Auth: SecuredRequestHandler[F, UserId, User, Aug
       req.as[UserLogin] flatMap { uLogin =>
         (for {
           usr <- OptionT(queries.userDao.select(uLogin.name))
-          isValid   <- OptionT.liftF(BCrypt.checkpwBool[F](uLogin.password, PasswordHash[BCrypt](usr.password))) if isValid
+          isValid <- OptionT.liftF(BCrypt.checkpwBool[F](uLogin.password, PasswordHash[BCrypt](usr.password))) if isValid
           resp <- OptionT.liftF(responseUser(usr))
           auth <- OptionT.liftF(Auth.authenticator.create(usr.id))
           authResponse <- OptionT.some(Auth.authenticator.embed(resp, auth))

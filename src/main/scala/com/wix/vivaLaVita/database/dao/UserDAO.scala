@@ -50,22 +50,22 @@ class UserDBIO(val profile: JdbcProfile, schema: Schema)(implicit executionConte
   import schema.userIdColumnType
   import schema.datetimeColumnType
 
-  override def delete(id: UserId) = schema.Users.filter(_.id === id).delete.map(_ => ())
+  override def delete(id: UserId) = schema.Users.filter(_.id === id).map(_.isActive).update(false).map(_ => ())
 
   override def update(id: UserId, row: User) = schema.Users.filter(_.id === id).update(row).map(_ => ())
 
   override def create(row: User) = (schema.Users += row).map(_ => row)
 
-  override def read(id: UserId) = schema.Users.filter(_.id === id).result.headOption
+  override def read(id: UserId) = schema.Users.filter(row => row.id === id && row.isActive === true).result.headOption
 
-  override def paged(page: Int, pageSize: Int): DBIO[Seq[User]] = schema.Users.sortBy(_.createdAt).drop(page * pageSize).take(pageSize).result
+  override def paged(page: Int, pageSize: Int): DBIO[Seq[User]] = schema.Users.filter(_.isActive === true).sortBy(_.createdAt).drop(page * pageSize).take(pageSize).result
 
   override def createSchema(): DBIO[Unit] = schema.Users.schema.create
 
   override def reset(): DBIO[Unit] = schema.Users.delete.map(_ => ())
 
   override def select(username: String): DBIO[Option[User]] = {
-    schema.Users.filter(usr => usr.name === username).result.headOption
+    schema.Users.filter(usr => usr.name === username && usr.isActive === true).result.headOption
   }
 }
 
