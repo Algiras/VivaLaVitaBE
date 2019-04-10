@@ -1,0 +1,8 @@
+.idea/
+target/
+.metals/
+.bloop/
+.ensime
+ensime-langserver.log
+pc.stdout.log
+.ensime_cache
