@@ -5,11 +5,14 @@ import java.util.UUID
 import cats.effect.Sync
 import com.wix.vivaLaVita.domain._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 import org.joda.time.DateTime
 import shapeless.tag
+import cats.syntax.functor._
+import io.circe.{ Decoder, Encoder }
+import io.circe.generic.auto._
+import io.circe.syntax._
 
 object UserDTO {
 
@@ -24,7 +27,7 @@ object UserDTO {
     updatedAt = user.updatedAt
   )
 
-  case class UserRequest(name: String, email: String, password: String)
+  case class UserRequest(name: String, email: String, password: Option[String])
   implicit val userRequestDecoder: Decoder[UserRequest] = deriveDecoder
   implicit def userRequestEntityDecoder[F[_]: Sync]: EntityDecoder[F, UserRequest] =
     jsonOf[F, UserRequest]
@@ -47,8 +50,26 @@ object UserDTO {
     )
   }
 
-  case class UserLogin(name: String, password: String)
-  implicit val userLoginDecoder: Decoder[UserLogin] = deriveDecoder
-  implicit def userLoginEntityDecoder[F[_]: Sync]: EntityDecoder[F, UserLogin] =
-    jsonOf[F, UserLogin]
+  implicit val LoginFlowEncoder: Encoder[AuthTokenType] = deriveEncoder
+
+  sealed trait UserLoginFlow
+  final case class PasswordFlow(email: String, password: String) extends UserLoginFlow
+  final case class TokenFlow(`type`: AuthTokenType, token: String) extends UserLoginFlow
+
+  implicit val passwordFlowDecoder: Decoder[PasswordFlow] = deriveDecoder
+  implicit val tokenFlowDecoder: Decoder[TokenFlow] = deriveDecoder
+
+  implicit def userLoginViaPasswordEntityDecoder[F[_]: Sync]: EntityDecoder[F, PasswordFlow] =
+    jsonOf[F, PasswordFlow]
+  implicit def userLoginViaTokenEntityDecoder[F[_]: Sync]: EntityDecoder[F, TokenFlow] =
+    jsonOf[F, TokenFlow]
+
+  implicit val userLoginFlowDecoder: Decoder[UserLoginFlow] = List[Decoder[UserLoginFlow]](
+    Decoder[PasswordFlow].widen,
+    Decoder[TokenFlow].widen
+  ).reduceLeft(_ or _)
+
+  implicit def userLoginEntityDecoder[F[_]: Sync]: EntityDecoder[F, UserLoginFlow] =
+    jsonOf[F, UserLoginFlow]
+
 }

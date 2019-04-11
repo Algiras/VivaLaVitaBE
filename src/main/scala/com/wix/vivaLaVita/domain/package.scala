@@ -25,7 +25,7 @@ package object domain {
   case class User(id: UserId,
                   name: String,
                   email: String,
-                  password: String,
+                  password: Option[String],
                   createdAt: DateTime,
                   updatedAt: Option[DateTime],
                   isActive: Boolean)
@@ -44,8 +44,7 @@ package object domain {
                      updatedAt: Option[DateTime],
                      isActive: Boolean)
 
-  case class Link(candidateId: CandidateId, linkType: LinkType, url: String)
-  case class RequestLink(linkType: LinkType, url: String)
+  case class Link(linkType: LinkType, url: String)
 
   case class Candidate(id: CandidateId,
                        `type`: CandidateType,

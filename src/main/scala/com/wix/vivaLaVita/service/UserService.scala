@@ -3,7 +3,6 @@ package com.wix.vivaLaVita.service
 import java.util.UUID
 
 import cats.effect.Sync
-import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monoid._
 import cats.syntax.semigroup._
@@ -18,6 +17,7 @@ import shapeless.tag
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers.jca.BCrypt
+import cats.syntax.flatMap._
 
 import scala.util.Try
 
@@ -54,16 +54,18 @@ class UserService[F[_] : Sync](queries: Queries[F]) {
 
     case req@POST -> Root / "user" asAuthed _ => for {
       userReq <- req.request.as[UserRequest]
-      hashedPsw <-BCrypt.hashpw[F](userReq.password)
-      res <- queries.userDao.create(buildUser(userReq.copy(hashedPsw))).map(responseUser).flatten
+      passWord <- if(userReq.password.isDefined) Sync[F].delay(userReq.password.get) else Sync[F].raiseError[String](new Exception("Password is mandatory"))
+      hashedPsw <-BCrypt.hashpw[F](passWord)
+      res <- queries.userDao.create(buildUser(userReq.copy(password = Some(hashedPsw)))).map(responseUser).flatten
     } yield res
 
     case req@PUT -> Root / "user" / UserIdVal(id)  asAuthed _ => for {
       userReq <- req.request.as[UserRequest]
-      hashedPsw <-BCrypt.hashpw[F](userReq.password)
+      passWord <- if(userReq.password.isDefined) Sync[F].delay(userReq.password.get) else Sync[F].raiseError[String](new Exception("Password is mandatory"))
+      hashedPsw <-BCrypt.hashpw[F](passWord)
       res <- queries.userDao.read(id).flatMap(userUpdate => {
         userUpdate
-          .map(buildUpdatedUser(_, userReq.copy(password = hashedPsw)))
+          .map(buildUpdatedUser(_, userReq.copy(password = Some(hashedPsw))))
           .map(u => queries.userDao.update(id, u).flatMap(_ => responseUser(u)))
           .getOrElse(notFound)
       })

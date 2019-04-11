@@ -21,7 +21,7 @@ trait UserDAO[F[_]] {
 
   def paged(page: Int, pageSize: Int): F[Seq[User]]
 
-  def select(username: String): F[Option[User]]
+  def select(email: String): F[Option[User]]
 
   def createSchema(): F[Unit]
 
@@ -64,8 +64,8 @@ class UserDBIO(val profile: JdbcProfile, schema: Schema)(implicit executionConte
 
   override def reset(): DBIO[Unit] = schema.Users.delete.map(_ => ())
 
-  override def select(username: String): DBIO[Option[User]] = {
-    schema.Users.filter(usr => usr.name === username && usr.isActive === true).result.headOption
+  override def select(email: String): DBIO[Option[User]] = {
+    schema.Users.filter(usr => usr.email === email && usr.isActive === true).result.headOption
   }
 }
 

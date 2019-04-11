@@ -3,7 +3,7 @@ package com.wix.vivaLaVita
 import cats.effect._
 import cats.implicits._
 import cats.~>
-import com.wix.vivaLaVita.auth.AuthService
+import com.wix.vivaLaVita.auth.{AuthService, LoginFlowCheck}
 import com.wix.vivaLaVita.config.{Config, DBConfig}
 import com.wix.vivaLaVita.database.{DBQueries, Queries, Schema}
 import tsec.mac.jca.HMACSHA256
@@ -39,7 +39,8 @@ object App extends IOApp {
       query <- queries(H2Profile, config.db)
       key <- HMACSHA256.generateKey[IO]
       secureRequestHandler = AuthService[IO](key, query.userDao)
-      services <- Server.run[IO](config.http, secureRequestHandler, query)
+      loginCheck = new LoginFlowCheck[IO](query.userDao, config.google.googleApiKey)
+      services <- Server.run[IO](config.http, loginCheck, secureRequestHandler, query)
     } yield services
   }
 }

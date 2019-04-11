@@ -12,10 +12,13 @@ import org.joda.time.DateTime
 import shapeless.tag
 
 object CandidateDTO {
+  implicit val LinkEncoder: Encoder[Link] = deriveEncoder
+  implicit val LinkDecoder: Decoder[Link] = deriveDecoder
+
   case class CandidateResponse(id: CandidateId,
                                `type`: CandidateType,
                                fullName: String,
-                               links: Seq[RequestLink],
+                               links: Seq[Link],
                                realUrl: Option[String],
                                createdAt: DateTime,
                                updatedAt: Option[DateTime])
@@ -26,7 +29,7 @@ object CandidateDTO {
     id = candidate.id,
     `type` = candidate.`type`,
     fullName = candidate.fullName,
-    links = candidate.links.map(link => RequestLink(link.linkType, link.url)),
+    links = candidate.links,
     realUrl = candidate.realUrl,
     createdAt = candidate.createdAt,
     updatedAt = candidate.updatedAt
@@ -34,30 +37,30 @@ object CandidateDTO {
 
   case class CandidateRequest(`type`: CandidateType,
                               fullName: String,
-                              links: Seq[RequestLink],
+                              links: Seq[Link],
                               realUrl: Option[String])
 
   implicit val CandidateRequestDecoder: Decoder[CandidateRequest] = deriveDecoder
   implicit def CandidateRequestEntityDecoder[F[_] : Sync]: EntityDecoder[F, CandidateRequest] =
     jsonOf[F, CandidateRequest]
 
-  def buildCandidate(candidate: CandidateRequest, links: Seq[Link]): Candidate = Candidate(
+  def buildCandidate(candidate: CandidateRequest): Candidate = Candidate(
     id = tagUUIDAsCandidateId(UUID.randomUUID()),
     `type` = candidate.`type`,
     fullName = candidate.fullName,
-    links = links,
+    links = candidate.links,
     realUrl = candidate.realUrl,
     createdAt = DateTime.now(),
     updatedAt = None,
     isActive = true
   )
 
-  def buildUpdatedCandidate(candidate: Candidate, CandidateUpdate: CandidateRequest): Candidate = {
+  def buildUpdatedCandidate(candidate: Candidate, candidateUpdate: CandidateRequest): Candidate = {
     candidate.copy(
-      `type` = candidate.`type`,
-      fullName = candidate.fullName,
-      links = candidate.links.map(rLink => Link(candidate.id, rLink.linkType, rLink.url)),
-      realUrl = candidate.realUrl,
+      `type` = candidateUpdate.`type`,
+      fullName = candidateUpdate.fullName,
+      links = candidateUpdate.links,
+      realUrl = candidateUpdate.realUrl,
       updatedAt = Some(DateTime.now)
     )
   }

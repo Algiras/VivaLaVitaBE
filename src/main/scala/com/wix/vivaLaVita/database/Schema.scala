@@ -4,9 +4,13 @@ import java.sql.Timestamp
 import java.util.UUID
 
 import com.wix.vivaLaVita.domain.{CandidateType, _}
+import io.circe.{Decoder, Encoder, Json}
 import org.joda.time.DateTime
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
+import io.circe.syntax._
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+ import io.circe.parser._
 
 class Schema(val profile: JdbcProfile){
   import profile.api._
@@ -46,11 +50,19 @@ class Schema(val profile: JdbcProfile){
     name => LinkType.namesToValuesMap(name)
   )
 
+  implicit val LinkEncoder: Encoder[Link] = deriveEncoder
+  implicit val LinkDecoder: Decoder[Link] = deriveDecoder
+  type CandidateLinks = Seq[Link]
+  implicit val candidateLinksColumnType: JdbcType[CandidateLinks] = MappedColumnType.base[CandidateLinks, String](
+    candidateLinks => candidateLinks.asJson.noSpaces,
+    linksStr => parse(linksStr).getOrElse(Json.Null).as[CandidateLinks].getOrElse(Seq.empty)
+  )
+
   class UsersTable(tag: Tag) extends Table[User](tag, "USERS"){
     def id = column[UserId]("ID", O.PrimaryKey)
     def name = column[String]("NAME")
     def email = column[String]("EMAIL", O.Unique)
-    def password = column[String]("PASSWORD")
+    def password = column[Option[String]]("PASSWORD")
     def createdAt = column[DateTime]("CREATED_AT")
     def updatedAt = column[Option[DateTime]]("UPDATED_AT")
     def isActive = column[Boolean]("IS_ACTIVE")
@@ -80,26 +92,15 @@ class Schema(val profile: JdbcProfile){
     def * = (id, positionId, candidateId, message, createdAt, updatedAt, isActive).mapTo[Message]
   }
 
-  class CandidateLinksTable(tag: Tag) extends Table[Link](tag, "CANDIDATE_LINKS"){
-    def candidateId = column[CandidateId]("CANDIDATE_ID")
-    def linkType = column[LinkType]("LINK_TYPE")
-    def url = column[String]("URL")
-
-    def pk = primaryKey("pk_a", (candidateId, linkType))
-
-    def * = (candidateId, linkType, url).mapTo[Link]
-  }
-
   class CandidateTable(tag: Tag) extends Table[Candidate](tag, "CANDIDATES"){
     def id = column[CandidateId]("ID", O.PrimaryKey)
     def `type` = column[CandidateType]("TYPE")
     def fullName = column[String]("FULL_NAME")
+    def links = column[CandidateLinks]("CANDIDATE_LINKS")
     def realUrl = column[Option[String]]("REAL_URL")
     def createdAt = column[DateTime]("CREATED_AT")
     def updatedAt = column[Option[DateTime]]("UPDATED_AT")
     def isActive = column[Boolean]("IS_ACTIVE")
-
-    def links = foreignKey("LINK_FK", id, CandidateLinks)(_.candidateId)
 
     def * = (id, `type`, fullName, links, realUrl, createdAt, updatedAt, isActive).mapTo[Candidate]
   }
@@ -107,6 +108,5 @@ class Schema(val profile: JdbcProfile){
   val Users: TableQuery[UsersTable] = TableQuery[UsersTable]
   val Positions: TableQuery[PositionTable] = TableQuery[PositionTable]
   val Messages: TableQuery[MessageTable] = TableQuery[MessageTable]
-  val Candidate: TableQuery[CandidateTable] = TableQuery[CandidateTable]
-  val CandidateLinks: TableQuery[CandidateLinksTable] = TableQuery[CandidateLinksTable]
+  val Candidates: TableQuery[CandidateTable] = TableQuery[CandidateTable]
 }

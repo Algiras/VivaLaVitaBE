@@ -48,11 +48,11 @@ object MessageDTO {
     isActive = true
   )
 
-  def buildUpdatedMessage(msg: Message, MessageUpdate: MessageRequest): Message = {
+  def buildUpdatedMessage(msg: Message, messageUpdate: MessageRequest): Message = {
     msg.copy(
-      positionId = msg.positionId,
-      candidateId = msg.candidateId,
-      message = msg.message,
+      positionId = messageUpdate.positionId,
+      candidateId = messageUpdate.candidateId,
+      message = messageUpdate.message,
       updatedAt = Some(DateTime.now)
     )
   }

@@ -1,5 +1,5 @@
 import sbt.Keys._
-import sbt._
+import sbt.{enablePlugins, _}
 
 val Http4sVersion = "0.20.0-M6"
 val Specs2Version = "4.1.0"
@@ -10,6 +10,8 @@ val shapelessVersion = "2.3.3"
 val tsecV = "0.1.0-M3"
 val pureConfigVersion = "0.10.2"
 val enumeratumCirceVersion = "1.5.21"
+val googleClientVersion = "1.22.0"
+
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
@@ -40,10 +42,13 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
+      "org.http4s" %% "http4s-twirl" % Http4sVersion,
 
       "io.circe" %% "circe-core" % CirceVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
       "io.circe" %% "circe-literal" % CirceVersion,
+
+      "com.google.api-client" % "google-api-client" % googleClientVersion,
 
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
 
@@ -58,7 +63,7 @@ lazy val root = (project in file("."))
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
-  )
+  ).enablePlugins(SbtTwirl)
 
 
 addCompilerPlugin(
