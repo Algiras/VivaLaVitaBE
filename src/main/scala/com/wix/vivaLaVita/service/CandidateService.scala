@@ -9,6 +9,7 @@ import cats.syntax.monoid._
 import cats.syntax.semigroup._
 import cats.syntax.semigroupk._
 import com.wix.vivaLaVita.database.Queries
+import com.wix.vivaLaVita.database.dao.CandidateDAO.Filter
 import com.wix.vivaLaVita.domain._
 import com.wix.vivaLaVita.dto.CandidateDTO._
 import io.circe.syntax._
@@ -34,10 +35,8 @@ class CandidateService[F[_] : Sync](queries: Queries[F]) {
   private def responseCandidate(Candidate: Candidate) = Ok(buildResponse(Candidate).asJson)
 
   val service: TSecAuthService[User, AugmentedJWT[HMACSHA256, UserId], F] = TSecAuthService {
-    // get Candidate by Name ~> return his info and hiringProcessInfo
-
-    case GET -> Root / "candidate" :? PageQueryParamMatcher(page) +& PageSizeQueryParamMatcher(pageSize)  asAuthed _ =>
-      queries.candidateDao.paged(page, pageSize).flatMap(res => Ok(res.map(buildResponse).asJson))
+    case GET -> Root / "candidate" :? PageQueryParamMatcher(page) +& PageSizeQueryParamMatcher(pageSize) +& OptionalFullNameParamMatcher(fullName) +& OptionalLinkParamMatcher(link) +& OptionalEmailParamMatcher(email)  asAuthed _ =>
+      queries.candidateDao.paged(page, pageSize, Filter(fullName = fullName, link = link, email = email)).flatMap(res => Ok(res.map(buildResponse).asJson))
 
     case GET -> Root / "candidate" / CandidateIdVal(id)  asAuthed _ =>
       queries.candidateDao.read(id).flatMap(res => res.map(responseCandidate).getOrElse(notFound))

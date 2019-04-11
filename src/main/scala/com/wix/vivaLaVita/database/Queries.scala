@@ -40,7 +40,7 @@ class DBQueries[F[_]: Sync](profile: JdbcProfile, schema: Schema, transform: DBI
     _ <- positionDao.create(PositionDTO.buildPosition(PositionRequest("Awesome FE Developer")))
     position <- positionDao.create(PositionDTO.buildPosition(PositionRequest("Awesome BE Developer")))
     _ <- candidateDao.create(
-      CandidateDTO.buildCandidate(CandidateRequest(CandidateType.Lead, "Mindaugas Daubyla", Seq(Link(LinkType.LinkedIn, "http://LinkedIn")), None))
+      CandidateDTO.buildCandidate(CandidateRequest(`type` = CandidateType.Lead, email = "email@email.com", fullName = "Mindaugas", links = Seq(Link(LinkType.LinkedIn, "http://LinkedIn")), realUrl = None))
     )
     _ <- messageDao.create(MessageDTO.buildMessage(MessageRequest(Some(position.id), None, "Some message")))
   } yield ()

@@ -59,6 +59,7 @@ package object domain {
 
   case class Candidate(id: CandidateId,
                        `type`: CandidateType,
+                       email: String,
                        fullName: String,
                        links: Seq[Link],
                        realUrl: Option[String],

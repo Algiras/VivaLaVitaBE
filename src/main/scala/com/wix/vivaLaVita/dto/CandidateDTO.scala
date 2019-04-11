@@ -18,6 +18,7 @@ object CandidateDTO {
   case class CandidateResponse(id: CandidateId,
                                `type`: CandidateType,
                                fullName: String,
+                               email: String,
                                links: Seq[Link],
                                realUrl: Option[String],
                                createdAt: DateTime,
@@ -29,6 +30,7 @@ object CandidateDTO {
     id = candidate.id,
     `type` = candidate.`type`,
     fullName = candidate.fullName,
+    email = candidate.email,
     links = candidate.links,
     realUrl = candidate.realUrl,
     createdAt = candidate.createdAt,
@@ -36,6 +38,7 @@ object CandidateDTO {
   )
 
   case class CandidateRequest(`type`: CandidateType,
+                              email: String,
                               fullName: String,
                               links: Seq[Link],
                               realUrl: Option[String])
@@ -48,6 +51,7 @@ object CandidateDTO {
     id = tagUUIDAsCandidateId(UUID.randomUUID()),
     `type` = candidate.`type`,
     fullName = candidate.fullName,
+    email = candidate.email,
     links = candidate.links,
     realUrl = candidate.realUrl,
     createdAt = DateTime.now(),
@@ -59,6 +63,7 @@ object CandidateDTO {
     candidate.copy(
       `type` = candidateUpdate.`type`,
       fullName = candidateUpdate.fullName,
+      email = candidate.email,
       links = candidateUpdate.links,
       realUrl = candidateUpdate.realUrl,
       updatedAt = Some(DateTime.now)

@@ -17,6 +17,10 @@ class ServiceDSL[F[_]: Monad] {
   object PageQueryParamMatcher extends QueryParamDecoderMatcher[Int]("page")
   object PageSizeQueryParamMatcher extends QueryParamDecoderMatcher[Int]("pageSize")
 
+  object OptionalFullNameParamMatcher extends OptionalQueryParamDecoderMatcher[String]("fullName")
+  object OptionalLinkParamMatcher extends OptionalQueryParamDecoderMatcher[String]("link")
+  object OptionalEmailParamMatcher extends OptionalQueryParamDecoderMatcher[String]("email")
+
   private def buildMessage(message: String) = Json.obj(("message", Json.fromString(message)))
 
   val notFound: F[Response[F]] = NotFound(buildMessage("Not Found"))
