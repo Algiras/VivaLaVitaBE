@@ -20,6 +20,6 @@ class TypesService[F[_] : Sync]() {
   val service: TSecAuthService[User, AugmentedJWT[HMACSHA256, UserId], F] = TSecAuthService {
     case GET -> Root / "link-type" asAuthed _ => Ok(LinkType.values.asJson)
     case GET -> Root / "candidate-type" asAuthed _ => Ok(CandidateType.values.asJson)
-    case GET -> Root / "hiring-process-status" asAuthed _ => Ok(HiringProcessStatus.values.asJson)
+    case GET -> Root / "hiring-process-status" asAuthed _ => Ok(HiringProcessStatusType.values.asJson)
   }
 }

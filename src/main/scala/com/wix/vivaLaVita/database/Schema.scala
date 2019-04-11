@@ -27,6 +27,11 @@ class Schema(val profile: JdbcProfile) {
     uuId => tagUUIDAsUserId(uuId)
   )
 
+  implicit val hiringProcessIdColumnType: JdbcType[HiringProcessId] = MappedColumnType.base[HiringProcessId, UUID](
+    hiringProcessId => hiringProcessId.asInstanceOf[UUID],
+    uuId => tagUUIDAsHiringProcessId(uuId)
+  )
+
   implicit val positionIdColumnType: JdbcType[PositionId] = MappedColumnType.base[PositionId, UUID](
     positionId => positionId.asInstanceOf[UUID],
     uuId => tagUUIDAsPositionId(uuId)
@@ -52,13 +57,11 @@ class Schema(val profile: JdbcProfile) {
     name => LinkType.namesToValuesMap(name)
   )
 
-  implicit val LinkEncoder: Encoder[Link] = deriveEncoder
-  implicit val LinkDecoder: Decoder[Link] = deriveDecoder
-  type CandidateLinks = Seq[Link]
-  implicit val candidateLinksColumnType: JdbcType[CandidateLinks] = MappedColumnType.base[CandidateLinks, String](
-    candidateLinks => candidateLinks.asJson.noSpaces,
-    linksStr => parse(linksStr).getOrElse(Json.Null).as[CandidateLinks].getOrElse(Seq.empty)
+  implicit val hiringProcessStatusColumnType: JdbcType[HiringProcessStatusType] = MappedColumnType.base[HiringProcessStatusType, String](
+    hiringProcessStatus => hiringProcessStatus.entryName,
+    name => HiringProcessStatusType.namesToValuesMap(name)
   )
+
 
   class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UserId]("ID", O.PrimaryKey)
@@ -90,6 +93,26 @@ class Schema(val profile: JdbcProfile) {
     def isActive = column[Boolean]("IS_ACTIVE")
 
     def * = (id, name, createdAt, updatedAt, isActive).mapTo[Position]
+  }
+
+  class HiringProcessTable(tag: Tag) extends Table[HiringProcess](tag, "HIRING_PROCESS") {
+    def id = column[HiringProcessId]("ID")
+
+    def candidateId = column[CandidateId]("CANDIDATE_ID")
+
+    def positionId = column[PositionId]("POSITION_ID")
+
+    def status = column[HiringProcessStatusType]("HIRING_PROCESS_STATUS")
+
+    def createdAt = column[DateTime]("CREATED_AT")
+
+    def updatedAt = column[Option[DateTime]]("UPDATED_AT")
+
+    def isActive = column[Boolean]("IS_ACTIVE")
+
+    def pk = primaryKey("pk_hiringProcess", (candidateId, positionId))
+
+    def * = (id, candidateId, positionId, status, createdAt, updatedAt, isActive).mapTo[HiringProcess]
   }
 
   class MessageTable(tag: Tag) extends Table[Message](tag, "MESSAGES") {
@@ -187,4 +210,5 @@ class Schema(val profile: JdbcProfile) {
   val Messages: TableQuery[MessageTable] = TableQuery[MessageTable]
   val Candidates: TableQuery[CandidateTable] = TableQuery[CandidateTable]
   val Links: TableQuery[CandidateLinkTable] = TableQuery[CandidateLinkTable]
+  val HiringProcess: TableQuery[HiringProcessTable] = TableQuery[HiringProcessTable]
 }

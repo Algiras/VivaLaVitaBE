@@ -32,6 +32,7 @@ object Server {
     val positionService = new PositionService[F](queries)
     val messageService = new MessageService[F](queries)
     val candidateService = new CandidateService[F](queries)
+    val hiringProcessService = new HiringProcessService[F](queries)
 
 
     val transform = new (F ~> F){
@@ -47,8 +48,8 @@ object Server {
               userService.service <+>
               positionService.service <+>
               messageService.service <+>
-              candidateService.
-                service
+              candidateService.service <+>
+              hiringProcessService.service
         )
       ).orNotFound)))
       .bindHttp(httpConfig.port, httpConfig.host)

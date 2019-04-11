@@ -36,7 +36,7 @@ package object domain {
   case class HiringProcess(id: HiringProcessId,
                            candidateId: CandidateId,
                            positionId: PositionId,
-                           status: HiringProcessStatus,
+                           status: HiringProcessStatusType,
                            createdAt: DateTime,
                            updatedAt: Option[DateTime],
                            isActive: Boolean)
