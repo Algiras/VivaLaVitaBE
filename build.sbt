@@ -59,6 +59,8 @@ lazy val root = (project in file("."))
       "com.github.pureconfig" %% "pureconfig-enumeratum"  % pureConfigVersion,
       "com.github.pureconfig" %% "pureconfig-generic"     % pureConfigVersion,
 
+      "com.google.apis" % "google-api-services-oauth2" % "v2-rev149-1.25.0",
+
       "com.beachape" %% "enumeratum-circe" % enumeratumCirceVersion
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
