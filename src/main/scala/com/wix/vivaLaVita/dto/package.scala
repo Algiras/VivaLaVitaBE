@@ -27,4 +27,7 @@ package object dto {
 
   implicit val candidateIdEncoder: Encoder[CandidateId] = (id: CandidateId) => Encoder[UUID](Encoder[UUID])(id.asInstanceOf[UUID])
   implicit val candidateIdDecoder: Decoder[CandidateId] = (c: HCursor) => Decoder[UUID](Decoder[UUID])(c).map(tagUUIDAsCandidateId)
+
+  implicit val hiringProcessIdEncoder: Encoder[HiringProcessId] = (id: HiringProcessId) => Encoder[UUID](Encoder[UUID])(id.asInstanceOf[UUID])
+  implicit val hiringProcessIdDecoder: Decoder[HiringProcessId] = (c: HCursor) => Decoder[UUID](Decoder[UUID])(c).map(tagUUIDAsHiringProcessId)
 }
