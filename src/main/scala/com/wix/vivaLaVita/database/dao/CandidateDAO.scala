@@ -93,13 +93,13 @@ class CandidateDBIO(val profile: JdbcProfile, schema: Schema)(implicit execution
 
     for {
       candidates <- schema.Candidates.filter(row => row.isActive && (filter match {
-          case Filter(Some(fullName), Some(link), Some(email)) => row.email === email || row.links.filter(_.url === link).exists || row.fullName === fullName
-          case Filter(Some(fullName), None,       Some(email)) => row.email === email ||  row.fullName === fullName
-          case Filter(Some(fullName), Some(link), None       ) => row.links.filter(_.url === link).exists || row.fullName === fullName
-          case Filter(None,           Some(link), Some(email)) => row.email === email || row.links.filter(_.url === link).exists
-          case Filter(Some(fullName), None,       None       ) => row.fullName === fullName
-          case Filter(None,           Some(link), None       ) => row.links.filter(_.url === link).exists
-          case Filter(None,           None,       Some(email)) => row.email === email
+          case Filter(Some(fullName), Some(link), Some(email)) => row.email.like(s"%$email%") || row.links.filter(_.url.like(s"%$link%")).exists || row.fullName.like(s"%$fullName%")
+          case Filter(Some(fullName), None,       Some(email)) => row.email.like(s"%$email%") ||  row.fullName.like(s"%$fullName%")
+          case Filter(Some(fullName), Some(link), None       ) => row.links.filter(_.url.like(s"%$link%")).exists || row.fullName.like(s"%$fullName%")
+          case Filter(None,           Some(link), Some(email)) => row.email.like(s"%$email%") || row.links.filter(_.url.like(s"%$link%")).exists
+          case Filter(Some(fullName), None,       None       ) => row.fullName.like(s"%$fullName%")
+          case Filter(None,           Some(link), None       ) => row.links.filter(_.url.like(s"%$link%")).exists
+          case Filter(None,           None,       Some(email)) => row.email.like(s"%$email%")
           case _ => LiteralColumn(true)
         })
       )

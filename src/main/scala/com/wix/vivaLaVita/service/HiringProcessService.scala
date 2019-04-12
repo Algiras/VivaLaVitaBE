@@ -33,12 +33,6 @@ class HiringProcessService[F[_] : Sync](queries: Queries[F]) {
 
   private def responseHiringProcess(hiringProcess: HiringProcess) = Ok(buildResponse(hiringProcess).asJson)
 
-  private def guard[A](name: String)(value: F[Option[A]]) = value.flatMap(v => if(v.isDefined) {
-    Sync[F].pure(v.get)
-  } else {
-    Sync[F].raiseError[A](new Exception(s"$name is not defined"))
-  })
-
   val service: TSecAuthService[User, AugmentedJWT[HMACSHA256, UserId], F] = TSecAuthService {
     case GET -> Root / "hiringProcess" :? PageQueryParamMatcher(page) +& PageSizeQueryParamMatcher(pageSize) asAuthed _ =>
       queries.hiringProcessDao.paged(page, pageSize).flatMap(res => Ok(res.map(buildResponse).asJson))
@@ -54,8 +48,8 @@ class HiringProcessService[F[_] : Sync](queries: Queries[F]) {
     case req@POST -> Root / "hiringProcess" asAuthed _ => {
       for {
         hiringProcessRequest <- req.request.as[HiringProcessRequest]
-        _ <- guard("positionId")(queries.positionDao.read(hiringProcessRequest.positionId))
-        _ <- guard("candidateId")(queries.candidateDao.read(hiringProcessRequest.candidateId))
+        _ <- guardValueNotDefined("positionId")(queries.positionDao.read(hiringProcessRequest.positionId))
+        _ <- guardValueNotDefined("candidateId")(queries.candidateDao.read(hiringProcessRequest.candidateId))
         res <- queries.hiringProcessDao.create(buildHiringProcess(hiringProcessRequest)).map(responseHiringProcess).flatten
       } yield res
     }

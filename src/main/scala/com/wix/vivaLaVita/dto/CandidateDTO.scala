@@ -4,6 +4,7 @@ import java.util.UUID
 
 import cats.effect.Sync
 import com.wix.vivaLaVita.domain.{CandidateId, _}
+import com.wix.vivaLaVita.dto.MessageDTO.MessageRequest
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
@@ -41,7 +42,9 @@ object CandidateDTO {
                               email: String,
                               fullName: String,
                               links: Seq[Link],
-                              realUrl: Option[String])
+                              realUrl: Option[String],
+                              positionId: Option[PositionId] = None,
+                              message: Option[String] = None)
 
   implicit val CandidateRequestDecoder: Decoder[CandidateRequest] = deriveDecoder
   implicit def CandidateRequestEntityDecoder[F[_] : Sync]: EntityDecoder[F, CandidateRequest] =
