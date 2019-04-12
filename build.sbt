@@ -30,6 +30,7 @@ lazy val root = (project in file("."))
 
       "mysql" % "mysql-connector-java" % "8.0.14",
       "com.h2database" % "h2" % "1.4.196",
+      "org.postgresql" % "postgresql" % "9.4.1209",
 
       "com.github.nscala-time" %% "nscala-time" % "2.22.0",
       "io.github.jmcardon" %% "tsec-http4s" % tsecVersion,

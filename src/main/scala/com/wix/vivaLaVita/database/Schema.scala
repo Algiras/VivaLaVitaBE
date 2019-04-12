@@ -11,6 +11,7 @@ import slick.jdbc.{JdbcProfile, JdbcType}
 import io.circe.syntax._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser._
+import slick.jdbc.meta.MTable
 import slick.lifted.ProvenShape
 
 class Schema(val profile: JdbcProfile) {

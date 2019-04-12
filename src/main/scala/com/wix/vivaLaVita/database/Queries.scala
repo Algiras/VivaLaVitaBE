@@ -1,20 +1,17 @@
 package com.wix.vivaLaVita.database
 
 import cats.effect.Sync
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import cats.~>
 import com.wix.vivaLaVita.database.dao._
-import com.wix.vivaLaVita.domain.{CandidateType, HiringProcessStatusType, Link, LinkType}
-import com.wix.vivaLaVita.dto.CandidateDTO.CandidateRequest
-import com.wix.vivaLaVita.dto.HiringProcessDTO.HiringProcessRequest
-import com.wix.vivaLaVita.dto.MessageDTO.MessageRequest
-import com.wix.vivaLaVita.dto.PositionDTO.PositionRequest
-import com.wix.vivaLaVita.dto.{CandidateDTO, HiringProcessDTO, MessageDTO, PositionDTO, UserDTO}
+import com.wix.vivaLaVita.dto.UserDTO
 import com.wix.vivaLaVita.dto.UserDTO.UserRequest
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
+import slick.jdbc.meta.MTable
 import tsec.passwordhashers.jca._
+import cats.syntax.functor._
+import cats.syntax.flatMap._
+import cats.instances.vector._
 
 import scala.concurrent.ExecutionContext
 
@@ -33,20 +30,19 @@ class DBQueries[F[_]: Sync](profile: JdbcProfile, schema: Schema, transform: DBI
   def candidateDao: CandidateDAO[F] = CandidateDAO.lift[DBIO, F](new CandidateDBIO(profile, schema))(transform)
   def hiringProcessDao: HiringProcessDAO[F] = HiringProcessDAO.lift[DBIO, F](new HiringProcessDBIO(profile, schema))(transform)
 
+
   def setup: F[Unit] = for {
-    _ <- userDao.createSchema()
-    _ <- positionDao.createSchema()
-    _ <- messageDao.createSchema()
-    _ <- candidateDao.createSchema()
-    _ <- hiringProcessDao.createSchema()
-    _ <- BCrypt.hashpw[F]("password").flatMap(psw => userDao.create(UserDTO.buildUser(UserRequest("algimantas", "kras.algim@gmail.com", Some(psw)))))
-    _ <- positionDao.create(PositionDTO.buildPosition(PositionRequest("Awesome UX Developer")))
-    _ <- positionDao.create(PositionDTO.buildPosition(PositionRequest("Awesome FE Developer")))
-    position <- positionDao.create(PositionDTO.buildPosition(PositionRequest("Awesome BE Developer")))
-    candidate <- candidateDao.create(
-      CandidateDTO.buildCandidate(CandidateRequest(`type` = CandidateType.Lead, email = "email@email.com", fullName = "Mindaugas", links = Seq(Link(LinkType.LinkedIn, "http://LinkedIn")), realUrl = None))
-    )
-    _ <- hiringProcessDao.create(HiringProcessDTO.buildHiringProcess(HiringProcessRequest(position.id, candidate.id, HiringProcessStatusType.Active)))
-    _ <- messageDao.create(MessageDTO.buildMessage(MessageRequest(Some(position.id), None, "Some message")))
+    tableNames <- transform(MTable.getTables.map(tables => tables.map(_.name.name)))
+    _ <- tableNames.find(_ == schema.Users.baseTableRow.tableName).map(_ => Sync[F].pure(())).getOrElse(userDao.createSchema())
+    _ <- tableNames.find(_ == schema.Positions.baseTableRow.tableName).map(_ => Sync[F].pure(())).getOrElse(positionDao.createSchema())
+    _ <- tableNames.find(_ == schema.Messages.baseTableRow.tableName).map(_ => Sync[F].pure(())).getOrElse(messageDao.createSchema())
+    _ <- tableNames.find(_ == schema.Candidates.baseTableRow.tableName).map(_ => Sync[F].pure(())).getOrElse(candidateDao.createSchema())
+    _ <- tableNames.find(_ == schema.HiringProcess.baseTableRow.tableName).map(_ => Sync[F].pure(())).getOrElse(hiringProcessDao.createSchema())
+    //
+    _ <- userDao.select("kras.algim@gmail.com").flatMap(usr => if(usr.isDefined) {
+      Sync[F].pure(())
+    } else {
+      BCrypt.hashpw[F]("password").flatMap(psw => userDao.create(UserDTO.buildUser(UserRequest("algimantas", "kras.algim@gmail.com", Some(psw))))).map(_ => ())
+    })
   } yield ()
 }
